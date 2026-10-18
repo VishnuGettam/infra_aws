@@ -27,7 +27,7 @@ jobs:
           aws-region: ap-south-1
 
       - name: Check identity
-        run: aws sts get-caller-identity
+        run: aws sts get-caller-identity --profile sandbox
 
       - uses: hashicorp/setup-terraform@v3
 
