@@ -4,5 +4,6 @@ terraform {
     bucket = "infra-aws-state"
     key = "tf-aws-state.tfstate"
     use_lockfile = true
+    encrypt = true
   }
 }
