@@ -1,9 +1,11 @@
 provider "aws" {
-  profile = "sandbox"
+
+  profile = "gh-user" # temporary user for initial local setup 
+  region  = var.aws_region
 
   default_tags {
     tags = {
-      Project = "infra_aws"
+      Project   = "infra_aws"
       ManagedBy = "terraform"
     }
   }
