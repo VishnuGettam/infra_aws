@@ -13,7 +13,7 @@ terraform {
   # The bucket is not set here: backends cannot read data sources or variables,
   # so it is passed at init time with -backend-config="bucket=...".
   backend "s3" {
-    key         = "dev/terraform.tfstate"
+    key          = "dev/terraform.tfstate"
     region       = "ap-south-2"
     encrypt      = true
     use_lockfile = true
