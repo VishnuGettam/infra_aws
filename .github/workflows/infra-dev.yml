@@ -58,7 +58,7 @@ jobs:
         working-directory: ./terraform/infrastructure/dev
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          terraform init -backend-config="bucket=infra-aws-state-${ACCOUNT_ID}-${AWS_REGION}-an"
+          terraform init -input=false -backend-config="bucket=infra-aws-state-${ACCOUNT_ID}-${AWS_REGION}-an"
 
       # Step 7: Validates the syntax and structural correctness of the Terraform code
       - name: Terraform Validate
@@ -68,9 +68,9 @@ jobs:
       # Step 8: Generates an execution plan to preview proposed infrastructure changes
       - name: Terraform Plan
         working-directory: ./terraform/infrastructure/dev
-        run: terraform plan -no-color
+        run: terraform plan -input=false -no-color
 
       # Step 9: Executes the planned changes to create or update AWS resources automatically
       - name: Terraform Apply
         working-directory: ./terraform/infrastructure/dev
-        run: terraform apply -auto-approve -no-color 
+        run: terraform apply -input=false -auto-approve -no-color 

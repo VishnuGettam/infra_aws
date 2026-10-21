@@ -1,0 +1,5 @@
+aws_region         = "ap-south-2"
+instance_type      = "t3.micro"
+instance_name      = "WebServer"
+ssh_key            = "Sandbox-KP"
+webserver_userdata = "./scripts/userdata.sh"
