@@ -1,4 +1,4 @@
-name: Provision AWS Infrastructure
+name: Provision AWS Infrastructure for DEV environment
 
 # Controls when the workflow will run (manual dispatch or on git push to ep1-oidc-s3 when infra files change)
 on:
@@ -7,8 +7,8 @@ on:
     branches:
       - main
     paths:
-      - "terraform/infrastructure/**"
-      - ".github/workflows/infra.yml"
+      - "terraform/infrastructure/dev/**"
+      - ".github/workflows/infra-dev.yml"
 
 env:
   # Disables interactive prompts in Terraform for CI/CD environments
@@ -49,25 +49,28 @@ jobs:
 
       # Step 5: Checks if all Terraform configuration files follow canonical formatting rules
       - name: Terraform Format Check
-        working-directory: ./terraform/infrastructure
+        working-directory: ./terraform/infrastructure/dev
         run: terraform fmt -check -recursive
 
-      # Step 6: Initializes the Terraform working directory and downloads required provider plugins
+      # Step 6: Initializes the Terraform working directory and downloads required provider plugins.
+      # The state bucket name is derived from the assumed role's account ID and region, matching terraform/bootstrap/s3.tf
       - name: Terraform Init
-        working-directory: ./terraform/infrastructure
-        run: terraform init
+        working-directory: ./terraform/infrastructure/dev
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          terraform init -backend-config="bucket=infra-aws-state-${ACCOUNT_ID}-${AWS_REGION}-an"
 
       # Step 7: Validates the syntax and structural correctness of the Terraform code
       - name: Terraform Validate
-        working-directory: ./terraform/infrastructure
+        working-directory: ./terraform/infrastructure/dev
         run: terraform validate
 
       # Step 8: Generates an execution plan to preview proposed infrastructure changes
       - name: Terraform Plan
-        working-directory: ./terraform/infrastructure
+        working-directory: ./terraform/infrastructure/dev
         run: terraform plan -no-color
 
       # Step 9: Executes the planned changes to create or update AWS resources automatically
       - name: Terraform Apply
-        working-directory: ./terraform/infrastructure
+        working-directory: ./terraform/infrastructure/dev
         run: terraform apply -auto-approve -no-color 
