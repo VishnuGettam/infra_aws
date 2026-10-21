@@ -6,3 +6,7 @@ output "WebServer_PublicIP" {
 output "Instance_ID" {
   value = aws_instance.WebServer.id
 }
+
+output "WebServer_AZ" {
+  value = aws_instance.WebServer.availability_zone
+}
