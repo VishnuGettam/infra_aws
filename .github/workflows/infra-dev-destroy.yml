@@ -1,0 +1,65 @@
+name: Destroy AWS Infrastructure for DEV environment
+
+# Manual only: run from the Actions tab and type "destroy" to confirm
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to delete all DEV resources'
+        required: true
+
+env:
+  # Disables interactive prompts in Terraform for CI/CD environments
+  TF_IN_AUTOMATION: true
+
+# Never run at the same time as another DEV apply/destroy on the same state
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: Destroy AWS Infrastructure
+    runs-on: ubuntu-latest
+    if: ${{ inputs.confirm == 'destroy' }}
+
+    permissions:
+      # Required for GitHub OIDC to request short-lived AWS tokens
+      id-token: write
+      # Required to checkout repository code
+      contents: read
+
+    steps:
+      # Step 1: Clones the repository code onto the runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Exchanges GitHub OIDC token for temporary AWS IAM credentials without static keys
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-south-2
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+
+      # Step 3: Installs the specified version of the Terraform CLI on the runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.5
+
+      # Step 4: Initializes Terraform against the same S3 state used by the DEV apply workflow
+      - name: Terraform Init
+        working-directory: ./terraform/infrastructure/dev
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          terraform init -input=false -backend-config="bucket=infra-aws-state-${ACCOUNT_ID}-${AWS_REGION}-an"
+
+      # Step 5: Shows what will be deleted, for the run log
+      - name: Terraform Plan (destroy)
+        working-directory: ./terraform/infrastructure/dev
+        run: terraform plan -destroy -input=false -no-color
+
+      # Step 6: Deletes every resource tracked in the DEV state
+      - name: Terraform Destroy
+        working-directory: ./terraform/infrastructure/dev
+        run: terraform destroy -input=false -auto-approve -no-color
