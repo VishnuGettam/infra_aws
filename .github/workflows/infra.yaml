@@ -1,0 +1,73 @@
+name: Provision AWS Infrastructure
+
+# Controls when the workflow will run (manual dispatch or on git push to ep1-oidc-s3 when infra files change)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/infrastructure/**"
+      - ".github/workflows/infra.yml"
+
+env:
+  # Disables interactive prompts in Terraform for CI/CD environments
+  TF_IN_AUTOMATION: true
+
+jobs:
+  terraform:
+    name: Provision AWS Infrastructure
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required for GitHub OIDC to request short-lived AWS tokens
+      id-token: write
+      # Required to checkout repository code
+      contents: read
+
+    steps:
+      # Step 1: Clones the repository code onto the runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Exchanges GitHub OIDC token for temporary AWS IAM credentials without static keys
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-south-2
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+
+      # Step 3: Confirms successful AWS authentication by printing the assumed identity details
+      - name: Verify AWS Authentication
+        run: aws sts get-caller-identity
+
+      # Step 4: Installs the specified version of the Terraform CLI on the runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.5
+
+      # Step 5: Checks if all Terraform configuration files follow canonical formatting rules
+      - name: Terraform Format Check
+        working-directory: ./terraform/infrastructure
+        run: terraform fmt -check -recursive
+
+      # Step 6: Initializes the Terraform working directory and downloads required provider plugins
+      - name: Terraform Init
+        working-directory: ./terraform/infrastructure
+        run: terraform init
+
+      # Step 7: Validates the syntax and structural correctness of the Terraform code
+      - name: Terraform Validate
+        working-directory: ./terraform/infrastructure
+        run: terraform validate
+
+      # Step 8: Generates an execution plan to preview proposed infrastructure changes
+      - name: Terraform Plan
+        working-directory: ./terraform/infrastructure
+        run: terraform plan -no-color
+
+      # Step 9: Executes the planned changes to create or update AWS resources automatically
+      - name: Terraform Apply
+        working-directory: ./terraform/infrastructure
+        run: terraform apply -auto-approve -no-color 
