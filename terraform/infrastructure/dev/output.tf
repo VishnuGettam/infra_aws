@@ -10,3 +10,7 @@ output "Instance_ID" {
 output "WebServer_AZ" {
   value = aws_instance.WebServer.availability_zone
 }
+
+output "WebServer_Ec2DNS" {
+  value = aws_instance.WebServer.public_dns
+}
