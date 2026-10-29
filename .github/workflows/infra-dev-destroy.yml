@@ -1,4 +1,4 @@
-name: Destroy AWS Infrastructure for DEV environment
+name: AWS Infra - Sandbox - Destroy
 
 # Manual only: run from the Actions tab and type "destroy" to confirm
 on:
