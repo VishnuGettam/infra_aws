@@ -1,4 +1,4 @@
-name: Provision AWS Infrastructure for DEV environment
+name: AWS Infra - Sandbox
 
 # Controls when the workflow will run (manual dispatch or on git push to ep1-oidc-s3 when infra files change)
 on:
